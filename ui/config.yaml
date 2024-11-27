@@ -21,12 +21,14 @@ job:
   input_path: ../examples/MLCommons
   job_spec_file: '#job.input_path/job_spec.yaml'
   model_path: '#job.input_path/ARISE-auto-models'
+  max_rows: 1000
   prediction:
     all_predictions_file: '#job.input_path/ARISE-predictions/all-predictions.csv'
     config_file: ../config/generated-prediction-config-file.yaml
     estimator_file: estimator-nonlinear-XGBoost-Regressor-tokens_per_second.pkl
     greater_is_better: true
     predictions_with_ground_truth_file: '#job.input_path/ARISE-predictions/predictions-with-ground-truth.csv'
-  prediction_save_state_file: /tmp/prediction_save_state_file.yaml
+    original_truth_file: '#job.input_path/ARISE-predictions/original-data.csv'
+  prediction_save_state_file: prediction_save_state_file.yaml
   python: python
 loglevel: DEBUG

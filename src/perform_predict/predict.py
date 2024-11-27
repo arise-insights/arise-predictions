@@ -231,11 +231,11 @@ def _run_predictions(original_data: pd.DataFrame,
                 output_file=output_file_merged, index=False)
             logger.info(f"Wrote source of truth to {path}")
 
-            path = utils.write_df_to_csv(
-                df=original_data,
-                output_path=output_path,
-                output_file=constants.PRED_ORIGINAL_TRUTH_FILE, index=False)
-            logger.info(f"Wrote original data to {path}")
+        path = utils.write_df_to_csv(
+            df=original_data,
+            output_path=output_path,
+            output_file=constants.PRED_ORIGINAL_TRUTH_FILE, index=False)
+        logger.info(f"Wrote original data to {path}")
 
     if zipfile.is_zipfile(estimator_path):
         # remove temporary estimator artifacts folder created from given archive file

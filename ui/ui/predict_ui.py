@@ -2,6 +2,7 @@ import copy
 import logging
 import os
 from string import Template
+from tempfile import gettempdir
 
 import pandas as pd
 import streamlit as st
@@ -115,13 +116,21 @@ class PredictUI:
             styles[_columns_to_highlight] = 'background-color: lightblue'
             return styles
 
-        if 'all-predictions.csv' in st.session_state:
+        df_pred = st.session_state.get('all-predictions.csv')
+        df_orig = st.session_state.get('original_truth_file.csv')
+        if df_pred is not None:
             st.markdown("## Prediction result")
-            st.dataframe(filter_dataframe(
-                st.session_state['all-predictions.csv'])
-                .style.apply(highlight_columns,
-                             axis=None,
-                             _columns_to_highlight=st.session_state['all-predictions.csv.columns_to_highlight']))
+            df_pred, df_orig = filter_dataframe(df_pred, df_orig)
+            st.dataframe(df_pred.style.apply(highlight_columns,
+                         axis=None,
+                         _columns_to_highlight=st.session_state['all-predictions.csv.columns_to_highlight']))
+
+        if df_orig is not None:
+            st.markdown("## Original data")
+            st.dataframe(df_orig.style.apply(highlight_columns,
+                         axis=None,
+                         _columns_to_highlight=st.session_state['original_truth_file.csv.columns_to_highlight']))
+
 
 
         if 'predictions-with-ground-truth.csv' in st.session_state:
@@ -177,7 +186,7 @@ class PredictUI:
 
                 st.form_submit_button("Predict", on_click=self.on_predict)
 
-                st.toggle("compare with ground truth", key="compare_with_ground_truth", value=False,
+                st.toggle("compare with ground truth", key="compare_with_ground_truth", value=True,
                           help="Compare the results with the ground truth")
 
     def show_bot(self):
@@ -247,9 +256,19 @@ class PredictUI:
         response = f"{response}"
         st.session_state.bot_text_area = response
 
-    def persist_session_state(self, file):
+    def get_session_state_path(self):
+        """ returns session state path using temp dir if needed"""
+        dir = get_config("job", "prediction_save_state_dir")
+        file = get_config("job", "prediction_save_state_file")
+        if not dir or not os.path.exists(dir) or not os.path.isdir(dir):
+            dir = gettempdir()
+        path = os.path.join(dir, file)
+        logger.debug(f"get_session_state_path: {dir}/{file} = {path}")
+        return path
+
+    def persist_session_state(self):
         """ saves the input and output session_state fields to a file """
-        logger.debug(f"persist_session_state: {file}")
+        logger.debug(f"persist_session_state")
 
         dic_to_save = {"config_input_field": {},
                        "config_output_field": {}}
@@ -264,15 +283,17 @@ class PredictUI:
                 dic_to_save["config_output_field"][config_output_fields] = st.session_state[config_output_fields]
 
         st.session_state["persist_session_state"] = dic_to_save
-        with open(file, "w") as f:
+        with open(self.get_session_state_path(), "w") as f:
             yaml.dump(dic_to_save, f)
 
-    def load_session_state(self, file):
+    def load_session_state(self):
         """ loads the user UI fields (inputs, outputs ...) session_state fields from a saved file """
-        logger.debug(f"load_session_state: {file}")
+        logger.debug(f"load_session_state")
+        path = self.get_session_state_path()
+
         try:
-            if os.path.exists(file):
-                with open(file) as f:
+            if os.path.exists(path):
+                with open(path) as f:
                     dic_to_load = yaml.load(f, Loader=yaml.SafeLoader)
             else:
                 return
@@ -363,7 +384,7 @@ class PredictUI:
             logger.debug(f"get_prediction_configuration failed")
             return
 
-        self.persist_session_state(get_config("job", "prediction_save_state_file"))
+        self.persist_session_state()
 
         generate_prediction_config_file(fixed_input_values,
                                         variable_input_values,
@@ -411,6 +432,26 @@ The results are:
             st.session_state['all-predictions.csv.columns_to_highlight'] = columns_to_highlight
 
         # get the ground-truth file if exists
-        if os.path.exists(get_config("job", "prediction", "predictions_with_ground_truth_file")):
+        if st.session_state['compare_with_ground_truth'] and os.path.exists(
+                get_config("job", "prediction", "predictions_with_ground_truth_file")):
             csv = pd.read_csv(get_config("job", "prediction", "predictions_with_ground_truth_file"))
             st.session_state['predictions-with-ground-truth.csv'] = csv
+        else:
+            st.session_state.pop('predictions-with-ground-truth.csv', None)
+
+
+        # get the original-truth file if exists
+        if st.session_state['compare_with_ground_truth'] and os.path.exists(
+                get_config("job", "prediction", "original_truth_file")):
+            csv = pd.read_csv(get_config("job", "prediction", "original_truth_file"))
+            prediction_csv = st.session_state.get('all-predictions.csv')
+            if prediction_csv is not None:
+                new_cols = [col for col in prediction_csv if col in csv]
+                csv = csv[new_cols]
+            st.session_state['original_truth_file.csv'] = csv
+            st.session_state['original_truth_file.csv.columns_to_highlight'] \
+                = st.session_state['all-predictions.csv.columns_to_highlight']
+        else:
+            st.session_state.pop('original_truth_file.csv', None)
+            st.session_state.pop('original_truth_file.csv.columns_to_highlight', None)
+

@@ -12,7 +12,7 @@ gui.set_input_fields(data_execution_metadata_file.job_metadata_inputs,
 gui.set_output_fields(data_execution_metadata_file.job_metadata_outputs)
 
 # load the session state (saved user fields) from a file
-gui.load_session_state(get_config("job", "prediction_save_state_file"))
+gui.load_session_state()
 
 # Show the UI
 gui.show()
