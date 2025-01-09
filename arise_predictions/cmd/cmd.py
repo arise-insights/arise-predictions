@@ -8,8 +8,13 @@ This module parses command line arguments and passes the information to the main
 
 cmd_args = "test123"
 
-
 def parse_args(argv: Sequence[str] = None):
+    # Parse the command line arguments
+    global cmd_args
+    cmd_args = process_args(argv)
+    return True
+
+def process_args(argv: Sequence[str] = None):
     """
     Parses the command line arguments and returns the parsed arguments.
 
@@ -142,14 +147,10 @@ def parse_args(argv: Sequence[str] = None):
     parser_predict.add_argument(
         '--ignore-metadata', help='ignore metadata if exists', action='store_true')
 
-    # Parse the command line arguments
-    global cmd_args
-    if argv: 
-        cmd_args = parser.parse_args(argv)
+    if argv:
+        return parser.parse_args(argv)
     else:
-        cmd_args = parser.parse_args()
-    return True
-
+        return parser.parse_args()
 
 def get_args():
     global cmd_args

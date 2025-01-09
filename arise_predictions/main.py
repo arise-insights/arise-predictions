@@ -6,46 +6,17 @@ from arise_predictions.auto_model.build_models import auto_build_models, get_est
 from arise_predictions.perform_predict.predict import demo_predict, get_predict_config
 from arise_predictions.utils import constants, utils
 from arise_predictions.preprocessing import job_parser
+from arise_predictions.sdk import execute_auto_build_models
 import logging
 
 logger = logging.getLogger(__name__)
 
-
-def load_spec(spec_file_name):
-    # analyzing job spec file
-    job_spec_file = os.path.join(get_args().input_path, spec_file_name)
-    logger.info('Analyzing job spec file: %s', job_spec_file)
-    loaded_job_spec = job_parser.parse_job_spec(job_spec_file)
-    if not loaded_job_spec:
-        logger.error("Failed to load job spec")
-        raise Exception
-    return loaded_job_spec
-
-
-def execute_preprocess(job_spec):
-
-    inputs = sorted(list(job_spec[0]))
-    outputs = sorted(list(job_spec[1]))
-    start_time_field_name = job_spec[2]
-    end_time_field_name = job_spec[3]
-    job_parser_class_name = job_spec[4]
-    job_entry_filter = job_spec[5]
-    feature_engineering = job_spec[6] if len(job_spec) > 6 else None
-    metadata_parser_class_name = job_spec[7] if len(job_spec) > 7 else None
-
-    # processing history ( if not done in the past )
-    analyzed_history_file = os.path.join(
-        get_args().input_path, constants.JOB_HISTORY_FILE_NAME + ".csv")
-    return get_history(analyzed_history_file, inputs, outputs, start_time_field_name, end_time_field_name,
-                       job_parser_class_name, job_entry_filter, feature_engineering, metadata_parser_class_name)
-
-
 def execute_analyze_jobs():
-    loaded_job_spec = load_spec(get_args().job_spec_file_name)
+    loaded_job_spec = load_spec(get_args().input_path, get_args().job_spec_file_name)
     outputs = sorted(list(loaded_job_spec[1]))
 
     # processing history ( if not done in the past )
-    history_data, history_file = execute_preprocess(loaded_job_spec)
+    history_data, history_file = execute_preprocess(loaded_job_spec, get_args().input_path)
 
     if history_data is None or history_data.empty:
         logging.error(("No historical data could be retrieved from given" 
@@ -58,38 +29,11 @@ def execute_analyze_jobs():
                                                   constants.JOB_ANALYSIS_PATH),
                          target_variables=outputs)
 
-
-def execute_auto_build_models():
-    loaded_job_spec = load_spec(get_args().job_spec_file_name)
-    outputs = sorted(list(loaded_job_spec[1])) 
-
-    # processing history ( if not done in the past )
-    history_data, history_file = execute_preprocess(loaded_job_spec)
-
-    if history_data is None or history_data.empty:
-        logging.error(("No historical data could be retrieved from given" 
-                       " location {}").format(get_args().input_path))
-    else:
-        logging.info("Invoking auto model search and build")
-        auto_build_models(raw_data=history_data,
-                          config=get_estimators_config(config_file=get_args().config_file,
-                                                       num_jobs=get_args().num_jobs),
-                          target_variables=outputs,
-                          output_path=os.path.join(
-                              get_args().input_path, 
-                              constants.AM_OUTPUT_PATH_SUFFIX),
-                          leave_one_out_cv=get_args().leave_one_out_cv,
-                          feature_col=get_args().feature_column,
-                          low_threshold=get_args().low_threshold,
-                          high_threshold=get_args().high_threshold,
-                          single_output_file=get_args().single_output_file)
-
-
 def execute_demo_predict():
-    loaded_job_spec = load_spec(get_args().job_spec_file_name)
+    loaded_job_spec = load_spec(get_args().input_path, get_args().job_spec_file_name)
 
     # processing history ( if not done in the past )
-    history_data, history_file = execute_preprocess(loaded_job_spec)
+    history_data, history_file = execute_preprocess(loaded_job_spec, get_args().input_path)
 
     if history_data is None or history_data.empty:
         logging.error(("No historical data could be retrieved from given" 
@@ -107,7 +51,7 @@ def execute_demo_predict():
 
 
 def execute_predict():
-    loaded_job_spec = load_spec(get_args().job_spec_file_name)
+    loaded_job_spec = load_spec(get_args().input_path, get_args().job_spec_file_name)
 
     logging.info("Invoking predict")
     demo_predict(
@@ -119,23 +63,6 @@ def execute_predict():
         metadata_path=get_args().input_path,
         output_path=os.path.join(get_args().input_path, constants.PRED_OUTPUT_PATH_SUFFIX))
 
-
-def get_history(history_file, inputs, outputs, start_time_field_name, end_time_field_name, job_parser_class_name,
-                job_entry_filter, feature_engineering, metadata_parser_class_name):
-    if os.path.exists(history_file) and not get_args().reread_history:
-        logging.info("using already processed history")
-        history_data = pd.read_csv(history_file)
-        history_data = history_data[utils.adjust_columns_with_duration(history_data.columns.values.tolist(),
-                                                                       start_time_field_name,
-                                                                       end_time_field_name)]
-    else:
-        logging.info("processing historical jobs")
-        history_data, history_file = job_parser.collect_jobs_history(
-            get_args().input_path + "/" + constants.JOB_DATA_DIR, get_args().input_path, inputs, outputs,
-            start_time_field_name, end_time_field_name, get_args().input_file, job_parser_class_name, job_entry_filter,
-            None if get_args().ignore_metadata else feature_engineering, metadata_parser_class_name,
-            get_args().input_path)
-    return history_data, history_file
 
 
 def main():
@@ -151,13 +78,14 @@ def main():
     logging.basicConfig(
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=level)
 
+    input_path = get_args().input_path
     # According to the selected command, call the appropriate function
     if get_args().command == 'preprocess':
-        execute_preprocess(load_spec(get_args().job_spec_file_name))
+        execute_preprocess(load_spec(input_path, get_args().job_spec_file_name), args)
     elif get_args().command == 'analyze-jobs':
         execute_analyze_jobs()
     elif get_args().command == 'auto-build-models':
-        execute_auto_build_models()
+        execute_auto_build_models(get_args())
     elif get_args().command == 'demo-predict':
         execute_demo_predict()
     elif get_args().command == 'predict':
