@@ -1,1 +1,1 @@
-from .sdk import execute_auto_build_models, get_base_args
+from .sdk import execute_auto_build_models, get_base_args, execute_predict

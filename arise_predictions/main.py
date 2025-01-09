@@ -49,22 +49,6 @@ def execute_demo_predict():
             metadata_path=get_args().input_path,
             output_path=os.path.join(get_args().input_path, constants.PRED_OUTPUT_PATH_SUFFIX))
 
-
-def execute_predict():
-    loaded_job_spec = load_spec(get_args().input_path, get_args().job_spec_file_name)
-
-    logging.info("Invoking predict")
-    demo_predict(
-        original_data=None,
-        config=get_predict_config(get_args().config_file),
-        estimator_path=get_args().model_path,
-        feature_engineering=None if get_args().ignore_metadata else loaded_job_spec[6],
-        metadata_parser_class_name=loaded_job_spec[7],
-        metadata_path=get_args().input_path,
-        output_path=os.path.join(get_args().input_path, constants.PRED_OUTPUT_PATH_SUFFIX))
-
-
-
 def main():
     if not parse_args():
         global logger
@@ -89,7 +73,7 @@ def main():
     elif get_args().command == 'demo-predict':
         execute_demo_predict()
     elif get_args().command == 'predict':
-        execute_predict()
+        execute_predict(get_args())
     else:
         logger.error('Invalid command!')
         logger.info(

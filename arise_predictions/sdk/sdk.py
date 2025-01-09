@@ -4,6 +4,7 @@ from arise_predictions.utils import constants, utils
 from arise_predictions.auto_model.build_models import auto_build_models, get_estimators_config
 from arise_predictions.preprocessing import job_parser
 from arise_predictions.cmd.cmd import process_args
+from arise_predictions.perform_predict.predict import demo_predict, get_predict_config
 import logging
 
 logger = logging.getLogger(__name__)
@@ -35,7 +36,10 @@ def get_history(history_file, inputs, outputs, start_time_field_name, end_time_f
     return history_data, history_file
 
 def get_base_args(fun: str):
-    return process_args([fun])
+    inp = [fun]
+    if fun == "predict":
+        inp.append("--model-path=empty")
+    return process_args(inp)
 
 def execute_preprocess(job_spec, args):
     inputs = sorted(list(job_spec[0]))
@@ -74,3 +78,16 @@ def execute_auto_build_models(args):
                           low_threshold=args.low_threshold,
                           high_threshold=args.high_threshold,
                           single_output_file=args.single_output_file)
+
+def execute_predict(args):
+    loaded_job_spec = load_spec(args.input_path, args.job_spec_file_name)
+
+    logging.info("Invoking predict")
+    demo_predict(
+        original_data=None,
+        config=get_predict_config(args.config_file),
+        estimator_path=args.model_path,
+        feature_engineering=None if args.ignore_metadata else loaded_job_spec[6],
+        metadata_parser_class_name=loaded_job_spec[7],
+        metadata_path=args.input_path,
+        output_path=os.path.join(args.input_path, constants.PRED_OUTPUT_PATH_SUFFIX))
