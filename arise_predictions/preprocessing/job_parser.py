@@ -4,7 +4,6 @@ import os
 import pandas as pd
 import numpy as np
 
-from arise_predictions.main import logger
 from arise_predictions.utils import utils, constants
 from arise_predictions.preprocessing import custom_job_parser
 import logging
