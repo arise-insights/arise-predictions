@@ -3,59 +3,59 @@ estimators:
     class_name: sklearn.linear_model.LinearRegression
     linear: true
     parameters:
-      estimator__fit_intercept: [True] # TODO for now need to have at least one candidate for parameter search
+      estimator__regressor__fit_intercept: [True] # TODO for now need to have at least one candidate for parameter search
   - name: Ridge-Regression
     class_name: sklearn.linear_model.Ridge
     linear: true
     parameters:
-      estimator__alpha: [0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0]
-      estimator__fit_intercept: [True, False]
+      estimator__regressor__alpha: [0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0]
+      estimator__regressor__fit_intercept: [True, False]
   - name: Lasso-Regression
     class_name: sklearn.linear_model.Lasso
     linear: true
     parameters:
-      estimator__alpha: [0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0]
-      estimator__fit_intercept: [True, False]
-      estimator__max_iter: [1000, 5000, 10000]
-      estimator__selection: ['cyclic', 'random']
+      estimator__regressor__alpha: [0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0]
+      estimator__regressor__fit_intercept: [True, False]
+      estimator__regressor__max_iter: [1000, 5000, 10000]
+      estimator__regressor__selection: ['cyclic', 'random']
   - name: ElasticNet-Regression
     class_name: sklearn.linear_model.ElasticNet
     linear: true
     parameters:
-      estimator__alpha: [0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0]
-      estimator__l1_ratio: [0.1, 0.3, 0.5, 0.7, 0.9, 1.0]
-      estimator__max_iter: [1000, 5000, 10000]
-      estimator__selection: ['cyclic', 'random']
+      estimator__regressor__alpha: [0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0]
+      estimator__regressor__l1_ratio: [0.1, 0.3, 0.5, 0.7, 0.9, 1.0]
+      estimator__regressor__max_iter: [1000, 5000, 10000]
+      estimator__regressor__selection: ['cyclic', 'random']
   - name: KNN-Regression
     class_name: sklearn.neighbors.KNeighborsRegressor
     linear: false
     parameters:
-      estimator__n_neighbors: [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25]
+      estimator__regressor__n_neighbors: [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25]
   - name: CART-Regression
     class_name: sklearn.tree.DecisionTreeRegressor
     linear: false
     parameters:
-      estimator__max_depth: [None, 5, 10, 15, 20, 25, 30]
-      estimator__min_samples_split: [2, 5, 10, 15, 20]
-      estimator__min_samples_leaf: [1, 2, 4, 6, 8]
+      estimator__regressor__max_depth: [None, 5, 10, 15, 20, 25, 30]
+      estimator__regressor__min_samples_split: [2, 5, 10, 15, 20]
+      estimator__regressor__min_samples_leaf: [1, 2, 4, 6, 8]
   - name: RandomForest-Regressor
     class_name: sklearn.ensemble.RandomForestRegressor
     linear: false
     parameters:
-      estimator__n_estimators: [50, 100, 200, 300, 400]
-      estimator__max_depth: [None, 5, 10, 15, 20, 25, 30]
-      estimator__min_samples_split: [2, 5, 10, 15, 20]
-      estimator__min_samples_leaf: [1, 2, 4, 6, 8]
+      estimator__regressor__n_estimators: [50, 100, 200, 300, 400]
+      estimator__regressor__max_depth: [None, 5, 10, 15, 20, 25, 30]
+      estimator__regressor__min_samples_split: [2, 5, 10, 15, 20]
+      estimator__regressor__min_samples_leaf: [1, 2, 4, 6, 8]
   - name: XGBoost-Regressor
     class_name: xgboost.XGBRegressor
     linear: false
     parameters:
-      estimator__n_estimators: [50, 100, 200, 300, 400, 500, 600, 700]
-      estimator__max_depth: [3, 5, 7, 8, 9, 10]
-      estimator__eta: [0.01, 0.1, 0.2, 0.3]
-      estimator__subsample: [0.5, 0.7, 1.0]
-      estimator__gamma: [0.0, 0.1, 0.2, 0.3, 0.4, 1.0]
-      estimator__objective: ["reg:squarederror", "reg:gamma"]
+      estimator__regressor__n_estimators: [50, 100, 200, 300, 400, 500, 600, 700]
+      estimator__regressor__max_depth: [3, 5, 7, 8, 9, 10]
+      estimator__regressor__eta: [0.01, 0.1, 0.2, 0.3]
+      estimator__regressor__subsample: [0.5, 0.7, 1.0]
+      estimator__regressor__gamma: [0.0, 0.1, 0.2, 0.3, 0.4, 1.0]
+      estimator__regressor__objective: ["reg:squarederror", "reg:gamma"]
 
 
 
