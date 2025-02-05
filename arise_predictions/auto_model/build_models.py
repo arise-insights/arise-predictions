@@ -6,8 +6,9 @@ import os
 import sys
 import importlib
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split, KFold, GridSearchCV, RandomizedSearchCV, LeaveOneGroupOut
-from sklearn.compose import ColumnTransformer
+from sklearn.compose import ColumnTransformer, TransformedTargetRegressor
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.pipeline import Pipeline
 from sklearn.ensemble import StackingRegressor
@@ -348,9 +349,15 @@ def _search_models(data: pd.DataFrame, estimators: list[tuple[str, Any]],
                     pipeline = Pipeline(steps=[("preprocessor", preprocessor),
                                                ("estimator", estimator_class)])
 
+                    model = TransformedTargetRegressor(
+                        regressor=pipeline,
+                        func=np.log1p,
+                        inverse_func=np.expm1
+                    )
+
                     if randomized_hpo:
                         search = RandomizedSearchCV(
-                            estimator=pipeline,
+                            estimator=model,
                             param_distributions=params,
                             scoring=scoring,
                             n_jobs=num_jobs,
@@ -361,7 +368,7 @@ def _search_models(data: pd.DataFrame, estimators: list[tuple[str, Any]],
                             verbose=1)
                     else:
                         search = GridSearchCV(
-                            estimator=pipeline,
+                            estimator=model,
                             param_grid=params,
                             scoring=scoring,
                             n_jobs=num_jobs,
