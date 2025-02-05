@@ -137,6 +137,23 @@ def parse_args(argv: Sequence[str] = None):
     parser_predict.add_argument(
         '--ignore-metadata', help='ignore metadata if exists', action='store_true')
 
+    # parser for data-predict command
+    parser_data_predict = subparsers.add_parser(
+        'data-predict', help='data predict help')
+    parser_data_predict.add_argument(
+        '--original-data-file', help='file containing the original data', nargs='?', required=False, type=str)
+    parser_data_predict.add_argument(
+        '--prediction-data-file', help='file containing the prediction data', required=True, nargs='?', type=str)
+    parser_data_predict.add_argument(
+        '--delta-only', help='predict only for prediction data not in original data', action='store_true')
+    parser_data_predict.add_argument(
+        '--input-path', help='input path', nargs='?', type=str)
+    parser_data_predict.add_argument(
+        '--config-file', default='config/example-demo-mlcommons-config.yaml',
+        help="path to config file defining estimators, target variables, and input search space", type=str)
+    parser_data_predict.add_argument(
+        '--model-path', help="path to serialized estimators", required=True, type=str)
+
     # Parse the command line arguments
     global cmd_args
     if argv: 

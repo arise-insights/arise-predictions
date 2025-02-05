@@ -316,3 +316,34 @@ def demo_predict(original_data: pd.DataFrame, config: PredictionInputSpace,
         output_path=output_path
     )
     logger.info(f"Demo predict outputs written to {output_path}")
+
+# Predict outputs for every row in a given prediction_data dataframe. If original data ia given, accuracy is computed.
+# If delta_only is True, predictions are performed only for the delta between the prediction data and the original data.
+
+
+def data_predict(original_data: pd.DataFrame, prediction_data: pd.DataFrame, estimator_path: str,
+                 estimators_config: list[Dict[str, Any]], target_variables: list[str], delta_only: bool = False,
+                 output_path: str = None):
+    logging.basicConfig(
+        stream=sys.stdout,
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    if output_path is None:
+        msg = "Must set output_path for demo predict outputs"
+        logger.error(msg)
+        raise ValueError(msg)
+
+    prediction_data_inputs = prediction_data[[c for c in prediction_data.columns if c not in target_variables]]
+    original_data_inputs = original_data[[c for c in original_data.columns if c not in target_variables]] if \
+        original_data is not None and not original_data.empty else None
+
+    logger.info("Beginning data predict")
+    _run_predictions(
+        original_data=original_data,
+        input_data=prediction_data_inputs[~prediction_data.isin(original_data_inputs)].dropna(how='any') if delta_only
+        and original_data_inputs is not None and not original_data_inputs.empty else prediction_data_inputs,
+        estimators_config=estimators_config,
+        estimator_path=estimator_path,
+        output_path=output_path
+    )
+    logger.info(f"Demo predict outputs written to {output_path}")

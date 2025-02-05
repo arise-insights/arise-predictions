@@ -202,7 +202,9 @@ class TestBuildModels(unittest.TestCase):
             target_variables=self.target_variables,
             rankings=rankings,
             estimators_per_target_variable=estimators_per_target_variable,
-            output_path=self.output_path)
+            output_path=self.output_path,
+            num_jobs=config.num_jobs,
+            leave_one_out_cv=None)
 
         # best linear and non-linear models for gpu target variable
         # print(f"******* self.output_path: {self.output_path}")
@@ -248,7 +250,9 @@ class TestBuildModels(unittest.TestCase):
             target_variables=self.target_variables,
             rankings=rankings,
             estimators_per_target_variable=estimators_per_target_variable,
-            output_path=self.output_path)
+            output_path=self.output_path,
+            num_jobs=config.num_jobs,
+            leave_one_out_cv=None)
 
         test_estimator_path = os.path.join(
             self.output_path, 

@@ -211,6 +211,16 @@ appearing in the data (this is of course possible for numeric inputs only), and 
 excluded from the prediction space. If the same input appears also in the `variable_values` list, as in the case of 
 `# of Accelerators`, the values explicitly specified (`9` in our example) are added to the values derived from the data.
 
+5. `data-predict` is a version of predict that receives the prediction space directly as a dataframe (read from a 
+   csv file given in `--prediction-data-file`) instead of defining it via a configuration file. The configuration
+   file is still provided, just for specifying properties of the target variables (i.e., the estimators section). If an 
+   original data file is provided (in `--original-data-file`), ground truth is calculated by comparing predicted 
+   outputs to the outputs that appear in it. If the flag `--delta-only` is provided and the original data is provided 
+   as well, predictions are performed only for input combinations that appear in the prediction file but not in the  
+   original data. This is useful, for example, if the original data provided is the training data, and we want to 
+   predict only for input combinations unseen by the model during training.
+
+
 The default log level is `DEBUG`. You can change by specifying a different log
 level as in the following example:
 

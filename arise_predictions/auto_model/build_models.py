@@ -318,13 +318,13 @@ def _search_models(data: pd.DataFrame, estimators: list[tuple[str, Any]],
         train_data = pd.concat([X_train, y_train], axis=1)
         output_file_train_data = f"train-data-{target_variable}.csv"
         utils.write_df_to_csv(train_data, output_path=output_path,
-                              output_file=output_file_train_data)
+                              output_file=output_file_train_data, index=False)
 
         # persist test data
         test_data = pd.concat([X_test, y_test], axis=1)
         output_file_test_data = f"test-data-{target_variable}.csv"
         utils.write_df_to_csv(test_data, output_path=output_path,
-                              output_file=output_file_test_data)
+                              output_file=output_file_test_data, index=False)
         logger.info(("Test data written to" 
                      f" {os.path.join(output_path, output_file_test_data)}"))
         
@@ -509,7 +509,9 @@ def _select_best_estimators(
         target_variables: list[str],
         rankings: pd.DataFrame, 
         estimators_per_target_variable: Dict[str, Dict[str, Any]],
-        output_path: str) -> Dict[str, List[Dict[str, Any]]]:
+        output_path: str,
+        num_jobs: int,
+        leave_one_out_cv: str) -> Dict[str, List[Dict[str, Any]]]:
     """
     Determine the best estimator per target variable from the ranking of
     estimators (in this iteration using the default performance metric MAPE),
@@ -551,14 +553,17 @@ def _select_best_estimators(
         best_estimators_for_target_variables[target_var] = best_estimators
 
         for estimator in estimators:
-            if estimator["estimator_name"] == best_linear_estimator_for_target_var or estimator["estimator_name"] == best_nonlinear_estimator_for_target_var:
+            if estimator["estimator_name"] == best_linear_estimator_for_target_var or \
+                    estimator["estimator_name"] == best_nonlinear_estimator_for_target_var:
                 best_estimators.append(estimator)
             
-                test_performance_summary, extrapolation_performance_summary = _persist_and_test_estimator(
+                test_performance_summary, extrapolation_performance_summary = _test_and_persist_estimator(
                     estimator=estimator,
                     target_variables=target_variables,
                     target_variable=target_var,
-                    output_path=output_path)
+                    output_path=output_path,
+                    num_jobs=num_jobs,
+                    leave_one_out_cv=leave_one_out_cv)
                 test_result_rows.append(test_performance_summary)
                 extrapolation_test_results_rows.append(extrapolation_performance_summary)
 
@@ -584,13 +589,16 @@ def _select_best_estimators(
     return best_estimators_for_target_variables
 
 
-def _persist_and_test_estimator(
+def _test_and_persist_estimator(
         estimator: Dict[str, Any],
         target_variables: List[str], 
         target_variable: str,
-        output_path: str) -> Tuple[Dict[str, str], Dict[str, str]]:
+        output_path: str,
+        num_jobs: int,
+        leave_one_out_cv: str) -> Tuple[Dict[str, str], Dict[str, str]]:
     """
-    Persist the given estimator and performs tests to measure its performance.
+    Performs tests to measure a given estimator performance. Then train on all data
+    (CV + test) and persists it.
 
     :param estimator: Dictionary with information about the estimator
     :type estimator: Dict[str, Any]
@@ -604,14 +612,6 @@ def _persist_and_test_estimator(
     :returns: Dictionaries with performance summary for test sets.
     :rtype: Tuple[Dict[str], Dict[str]] 
     """
-    _persist_estimator(
-            estimator_name=estimator["estimator_name"],
-            estimator_class=estimator["estimator_class"],
-            estimator_linear=estimator["linear"],
-            best_params=estimator["best_parameters"],
-            target_variable=target_variable,
-            output_path=output_path
-        )
 
     # Test on test set (samples held out during training)
     test_file = f"test-data-{target_variable}.csv"
@@ -654,9 +654,68 @@ def _persist_and_test_estimator(
                         f" target variable: {target_variable}"
                         f" using test data: {test_file}"
                         " is empty"))
+
+    _fit_on_all_data(estimator=estimator, target_variable=target_variable, target_variables=target_variables,
+                     output_path=output_path, num_jobs=num_jobs,
+                     leave_one_out_cv=leave_one_out_cv)
+
+    _persist_estimator(
+        estimator_name=estimator["estimator_name"],
+        estimator_class=estimator["estimator_class"],
+        estimator_linear=estimator["linear"],
+        best_params=estimator["best_parameters"],
+        target_variable=target_variable,
+        output_path=output_path
+    )
     
     return test_performance_summary, extrapolation_performance_summary
-        
+
+
+def _fit_on_all_data(estimator: Any, target_variable: str, target_variables: list[str], output_path: str,
+                     num_jobs: int, leave_one_out_cv: str):
+
+    train_data = _get_data(f"train-data-{target_variable}.csv", output_path)
+    test_data = _get_data(f"test-data-{target_variable}.csv", output_path)
+
+    data = pd.concat([train_data, test_data], ignore_index=True)
+
+    y_train = data[target_variable]
+    X_train = data.drop(target_variables, axis=1, errors="ignore")
+
+    estimator_class = estimator["estimator_class"]
+
+    pipeline = Pipeline(steps=[("estimator", estimator_class)])
+
+    if leave_one_out_cv:
+        groups = X_train.groupby(leave_one_out_cv.split(',')).ngroup()
+        cv_generator = LeaveOneGroupOut()
+    else:
+        groups = None
+        cv_generator = KFold(n_splits=10, shuffle=True)
+
+    search = GridSearchCV(
+            estimator=pipeline,
+            param_grid={'estimator__'+key: [value] for key, value in estimator["best_parameters"].items()},
+            scoring=metrics.create_scorers(),
+            n_jobs=num_jobs,
+            refit=constants.AM_DEFAULT_METRIC,
+            cv=cv_generator,
+            verbose=1)
+
+    if groups is not None:
+        search.fit(X_train, y_train, groups=groups)
+    else:
+        search.fit(X_train, y_train)
+
+
+def _get_data(input_file_name: str, output_path: str) -> Any:
+    input_file = os.path.join(output_path, input_file_name)
+
+    if not os.path.exists(input_file):
+        raise ValueError(f"No file {input_file} found for data set")
+
+    return pd.read_csv(input_file)
+
 
 def _persist_estimator(estimator_name: str, estimator_class: Any, 
                        estimator_linear: bool,
@@ -971,7 +1030,9 @@ def _merge_rankings(output_path: str):
 
 def _persist_and_test_meta_estimator(
         meta_learner_per_target_variable: Dict[str, Any],
-        output_path: str) -> None:
+        output_path: str,
+        num_jobs: int,
+        leave_one_out_cv: str) -> None:
     """
     Persist the meta-estimator for each target variable and evaluate it against
     corresponding test sets and extrapolation test set.
@@ -985,11 +1046,13 @@ def _persist_and_test_meta_estimator(
 
     for target_var, meta_estimators in meta_learner_per_target_variable.items():
         meta_estimator = meta_estimators[0]  # Only 1 in list for meta-learner
-        test_performance_summary, extrapolation_performance_summary = _persist_and_test_estimator(
+        test_performance_summary, extrapolation_performance_summary = _test_and_persist_estimator(
             estimator=meta_estimator,
             target_variables=target_variables,
             target_variable=target_var,
-            output_path=output_path)
+            output_path=output_path,
+            num_jobs=num_jobs,
+            leave_one_out_cv=leave_one_out_cv)
         test_result_rows.append(test_performance_summary)
         extrapolation_test_result_rows.append(extrapolation_performance_summary)
 
@@ -1060,7 +1123,9 @@ def auto_build_models(raw_data: pd.DataFrame, config: EstimatorsConfig,
         target_variables=target_variables, 
         rankings=rankings_df, 
         estimators_per_target_variable=estimators_per_target_variable,
-        output_path=output_path)
+        output_path=output_path,
+        num_jobs=config.num_jobs,
+        leave_one_out_cv=leave_one_out_cv)
     
     if feature_col:
         logger.info(("Beginning auto-model meta-learner search and build"
@@ -1080,7 +1145,9 @@ def auto_build_models(raw_data: pd.DataFrame, config: EstimatorsConfig,
         _merge_rankings(output_path=output_path)
         _persist_and_test_meta_estimator(
             meta_learner_per_target_variable=best_meta_learner_per_target_variable,
-            output_path=output_path
+            output_path=output_path,
+            num_jobs=config.num_jobs,
+            leave_one_out_cv=leave_one_out_cv
         )
         logger.info(f"Auto-model meta-learner artifacts written to {output_path}")
 

@@ -5,7 +5,7 @@ import os
 from arise_predictions.cmd.cmd import parse_args, get_args
 from arise_predictions.job_statistics.analyze_jobs import analyze_job_data
 from arise_predictions.auto_model.build_models import auto_build_models, get_estimators_config
-from arise_predictions.perform_predict.predict import demo_predict, get_predict_config
+from arise_predictions.perform_predict.predict import demo_predict, data_predict, get_predict_config
 from arise_predictions.utils import constants, utils
 from arise_predictions.preprocessing import job_parser
 import logging
@@ -138,6 +138,22 @@ def execute_predict():
         output_path=os.path.join(get_args().input_path, constants.PRED_OUTPUT_PATH_SUFFIX))
 
 
+def execute_data_predict():
+    loaded_job_spec = load_spec(get_args().model_path)
+    input_path = get_args().input_path
+
+    logging.info("Invoking data predict")
+    data_predict(
+        original_data=pd.read_csv(os.path.join(input_path, get_args().original_data_file)) if
+        get_args().original_data_file else None,
+        prediction_data=pd.read_csv(os.path.join(input_path, get_args().prediction_data_file)),
+        estimator_path=get_args().model_path,
+        estimators_config=get_predict_config(get_args().config_file).estimators,
+        target_variables=loaded_job_spec[1],
+        delta_only=get_args().delta_only,
+        output_path=os.path.join(input_path, constants.PRED_OUTPUT_PATH_SUFFIX))
+
+
 def get_history(history_file, inputs, outputs, start_time_field_name, end_time_field_name, job_parser_class_name,
                 job_entry_filter, feature_engineering, metadata_parser_class_name):
     if os.path.exists(history_file) and not get_args().reread_history:
@@ -180,6 +196,8 @@ def main():
         execute_demo_predict()
     elif get_args().command == 'predict':
         execute_predict()
+    elif get_args().command == 'data-predict':
+        execute_data_predict()
     else:
         logger.error('Invalid command!')
         logger.info(
