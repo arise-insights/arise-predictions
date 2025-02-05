@@ -347,17 +347,13 @@ def _search_models(data: pd.DataFrame, estimators: list[tuple[str, Any]],
                         remainder="passthrough")
 
                     pipeline = Pipeline(steps=[("preprocessor", preprocessor),
-                                               ("estimator", estimator_class)])
-
-                    model = TransformedTargetRegressor(
-                        regressor=pipeline,
-                        func=np.log1p,
-                        inverse_func=np.expm1
-                    )
+                                               ("estimator", TransformedTargetRegressor(regressor=estimator_class,
+                                                                                        func=np.log1p,
+                                                                                        inverse_func=np.expm1))])
 
                     if randomized_hpo:
                         search = RandomizedSearchCV(
-                            estimator=model,
+                            estimator=pipeline,
                             param_distributions=params,
                             scoring=scoring,
                             n_jobs=num_jobs,
@@ -368,7 +364,7 @@ def _search_models(data: pd.DataFrame, estimators: list[tuple[str, Any]],
                             verbose=1)
                     else:
                         search = GridSearchCV(
-                            estimator=model,
+                            estimator=pipeline,
                             param_grid=params,
                             scoring=scoring,
                             n_jobs=num_jobs,
@@ -684,7 +680,9 @@ def _fit_on_all_data(estimator: Any, target_variable: str, target_variables: lis
 
     estimator_class = estimator["estimator_class"]
 
-    pipeline = Pipeline(steps=[("estimator", estimator_class)])
+    pipeline = Pipeline(steps=[("estimator", TransformedTargetRegressor(regressor=estimator_class,
+                                                                                        func=np.log1p,
+                                                                                        inverse_func=np.expm1))])
 
     if leave_one_out_cv:
         groups = X_train.groupby(leave_one_out_cv.split(',')).ngroup()
@@ -695,7 +693,7 @@ def _fit_on_all_data(estimator: Any, target_variable: str, target_variables: lis
 
     search = GridSearchCV(
             estimator=pipeline,
-            param_grid={'estimator__'+key: [value] for key, value in estimator["best_parameters"].items()},
+            param_grid={'estimator__regressor__'+key: [value] for key, value in estimator["best_parameters"].items()},
             scoring=metrics.create_scorers(),
             n_jobs=num_jobs,
             refit=constants.AM_DEFAULT_METRIC,

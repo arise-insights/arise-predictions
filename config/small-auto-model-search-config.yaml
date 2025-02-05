@@ -3,53 +3,53 @@ estimators:
     class_name: sklearn.linear_model.LinearRegression
     linear: true
     parameters:
-      estimator__fit_intercept: [True] # TODO for now need to have at least one candidate for parameter search
+      estimator__regressor__fit_intercept: [True] # TODO for now need to have at least one candidate for parameter search
   - name: Ridge-Regression
     class_name: sklearn.linear_model.Ridge
     linear: true
     parameters:
-      estimator__alpha: [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
+      estimator__regressor__alpha: [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
   - name: Lasso-Regression
     class_name: sklearn.linear_model.Lasso
     linear: true
     parameters:
-      estimator__alpha: [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
-      estimator__max_iter: [1000, 2000]
+      estimator__regressor__alpha: [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
+      estimator__regressor__max_iter: [1000, 2000]
   - name: ElasticNet-Regression
     class_name: sklearn.linear_model.ElasticNet
     linear: true
     parameters:
-      estimator__alpha: [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
-      estimator__l1_ratio: [0.1, 0.5, 1.0]
-      estimator__max_iter: [1000, 2000]
+      estimator__regressor__alpha: [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
+      estimator__regressor__l1_ratio: [0.1, 0.5, 1.0]
+      estimator__regressor__max_iter: [1000, 2000]
   - name: KNN-Regression
     class_name: sklearn.neighbors.KNeighborsRegressor
     linear: false
     parameters:
-      estimator__n_neighbors: [1, 3, 5, 7, 9, 11, 13]
+      estimator__regressor__n_neighbors: [1, 3, 5, 7, 9, 11, 13]
   - name: CART-Regression
     class_name: sklearn.tree.DecisionTreeRegressor
     linear: false
     parameters:
-      estimator__max_depth: [None, 5, 10]
-      estimator__min_samples_split: [2, 5, 10]
-      estimator__min_samples_leaf: [1, 2, 4]
+      estimator__regressor__max_depth: [None, 5, 10]
+      estimator__regressor__min_samples_split: [2, 5, 10]
+      estimator__regressor__min_samples_leaf: [1, 2, 4]
   - name: RandomForest-Regressor
     class_name: sklearn.ensemble.RandomForestRegressor
     linear: false
     parameters:
-      estimator__n_estimators: [50, 100, 200]
-      estimator__max_depth: [None, 5, 10]
-      estimator__min_samples_split: [2, 10]
-      estimator__min_samples_leaf: [1, 4]
+      estimator__regressor__n_estimators: [50, 100, 200]
+      estimator__regressor__max_depth: [None, 5, 10]
+      estimator__regressor__min_samples_split: [2, 10]
+      estimator__regressor__min_samples_leaf: [1, 4]
   - name: XGBoost-Regressor
     class_name: xgboost.XGBRegressor
     linear: false
     parameters:
-      estimator__max_depth: [3, 6]
-      estimator__eta: [0.01, 0.3]
-      estimator__subsample: [0.5, 1.0]
-      estimator__gamma: [0.0, 0.1, 0.2]
+      estimator__regressor__max_depth: [3, 6]
+      estimator__regressor__eta: [0.01, 0.3]
+      estimator__regressor__subsample: [0.5, 1.0]
+      estimator__regressor__gamma: [0.0, 0.1, 0.2]
 
 
 
