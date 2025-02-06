@@ -671,7 +671,7 @@ def _fit_on_all_data(estimator: Any, target_variable: str, target_variables: lis
     estimator_class = estimator["estimator_class"]
 
     pipeline = _get_pipeline(inputs=X_train.columns.tolist(), categorical_variables=categorical_variables,
-                             estimator_class=estimator_class, include_cat=True)
+                             estimator_class=estimator_class)
 
     if leave_one_out_cv:
         groups = X_train.groupby(leave_one_out_cv.split(',')).ngroup()
