@@ -337,6 +337,9 @@ def data_predict(original_data: pd.DataFrame, prediction_data: pd.DataFrame, est
     original_data_inputs = original_data[[c for c in original_data.columns if c not in target_variables]] if \
         original_data is not None and not original_data.empty else None
 
+    #prediction_data_inputs = prediction_data_inputs[prediction_data_inputs.oo.isin([1024])]
+    #prediction_data_inputs = prediction_data_inputs[prediction_data_inputs.ii.ge(128)]
+
     logger.info("Beginning data predict")
     _run_predictions(
         original_data=original_data,
