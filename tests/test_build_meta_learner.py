@@ -129,7 +129,8 @@ class TestBuildMetaLearner(unittest.TestCase):
             estimators_per_target_variable=estimators_per_target_variable,
             output_path=self.output_path,
             num_jobs=config.num_jobs,
-            leave_one_out_cv=None)
+            leave_one_out_cv=None,
+            categorical_variables=self.categorical_variables)
         
         self._best_estimators_as_expected(
             best_estimators_for_target_vars=best_estimators_for_target_variables)
@@ -159,7 +160,8 @@ class TestBuildMetaLearner(unittest.TestCase):
             meta_learner_per_target_variable=best_meta_learner_per_target_variable,
             output_path=self.output_path,
             num_jobs=config.num_jobs,
-            leave_one_out_cv=None
+            leave_one_out_cv=None,
+            categorical_variables=self.categorical_variables
         )
 
     def _extrapolation_test_data_exists_if_feature_col(self):
