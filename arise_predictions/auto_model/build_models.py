@@ -1,24 +1,24 @@
-import logging
-from typing import Dict, Any, Tuple, List
-from dataclasses import dataclass
-import yaml
-import os
-import sys
 import importlib
-import pandas as pd
+import logging
+import os
+import shutil
+import sys
+from dataclasses import dataclass
+from typing import Dict, Any, Tuple, List
+
 import numpy as np
-from sklearn.model_selection import train_test_split, KFold, GridSearchCV, RandomizedSearchCV, LeaveOneGroupOut
+import pandas as pd
+import yaml
+from matplotlib import pyplot as plt
 from sklearn.compose import ColumnTransformer, TransformedTargetRegressor
-from sklearn.preprocessing import OneHotEncoder, FunctionTransformer
-from sklearn.pipeline import Pipeline
 from sklearn.ensemble import StackingRegressor
 from sklearn.inspection import permutation_importance
+from sklearn.model_selection import train_test_split, KFold, GridSearchCV, RandomizedSearchCV, LeaveOneGroupOut
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OneHotEncoder, FunctionTransformer
 
-from arise_predictions.utils import constants, utils
 from arise_predictions.metrics import metrics
-import shutil
-
-from matplotlib import pyplot as plt
+from arise_predictions.utils import constants, utils
 
 logger = logging.getLogger(__name__)
 
@@ -671,7 +671,7 @@ def _fit_on_all_data(estimator: Any, target_variable: str, target_variables: lis
     estimator_class = estimator["estimator_class"]
 
     pipeline = _get_pipeline(inputs=X_train.columns.tolist(), categorical_variables=categorical_variables,
-                             estimator_class=estimator_class, include_cat=False)
+                             estimator_class=estimator_class, include_cat=True)
 
     if leave_one_out_cv:
         groups = X_train.groupby(leave_one_out_cv.split(',')).ngroup()
@@ -685,7 +685,7 @@ def _fit_on_all_data(estimator: Any, target_variable: str, target_variables: lis
             param_grid={'estimator__regressor__'+key: [value] for key, value in estimator["best_parameters"].items()},
             scoring=metrics.create_scorers(),
             n_jobs=num_jobs,
-            refit=constants.AM_DEFAULT_METRIC,
+            refit=False,
             cv=cv_generator,
             verbose=1)
 
@@ -695,27 +695,23 @@ def _fit_on_all_data(estimator: Any, target_variable: str, target_variables: lis
         search.fit(X_train, y_train)
 
 
-def _get_pipeline(inputs: list[str], categorical_variables: list[str], estimator_class: Any,
-                  include_cat: bool = True) -> Any:
-    if include_cat:
-        preprocessor = ColumnTransformer(
-            transformers=[
+def _get_pipeline(inputs: list[str], categorical_variables: list[str], estimator_class: Any) -> Any:
+    preprocessor = ColumnTransformer(
+        transformers=[
             ("cat", OneHotEncoder(
                 handle_unknown="ignore",
                 sparse_output=False,
                 feature_name_combiner="concat"),
-             [] if estimator_class.__class__.__name__ in constants.AM_ESTIMATORS_CATBOOST else categorical_variables),
+             [] if estimator_class.__class__.__name__ in constants.AM_ESTIMATORS_CATBOOST else
+             [inputs.index(i) for i in categorical_variables]),
             ("log", FunctionTransformer(func=np.log1p, inverse_func=np.expm1),
-             [i for i in inputs if i not in categorical_variables])
+             [inputs.index(i) for i in inputs if i not in categorical_variables])
         ], remainder="passthrough")
-        return Pipeline(steps=[("preprocessor", preprocessor), ("estimator",
-                                                                TransformedTargetRegressor(regressor=estimator_class,
-                                                                                           func=np.log1p,
-                                                                                           inverse_func=np.expm1))])
-    else:
-        return Pipeline(steps=[("estimator", TransformedTargetRegressor(regressor=estimator_class,
-                                                                                  func=np.log1p,
-                                                                                  inverse_func=np.expm1))])
+
+    return Pipeline(steps=[("preprocessor", preprocessor), ("estimator",
+                                                            TransformedTargetRegressor(regressor=estimator_class,
+                                                                                       func=np.log1p,
+                                                                                       inverse_func=np.expm1))])
 
 
 def _get_data(input_file_name: str, output_path: str) -> Any:
