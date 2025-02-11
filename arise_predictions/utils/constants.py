@@ -39,6 +39,7 @@ AM_CONFIG_NAME = "name"
 AM_CONFIG_CLASS_NAME = "class_name"
 AM_CONFIG_LINEAR = "linear"
 AM_CONFIG_PARAMETERS = "parameters"
+AM_CONFIG_LINEARTREE = "lineartree"
 AM_ESTIMATORS_NO_SEED = ["LinearRegression", "SVR", "DecisionTreeRegressor",
                          "KNeighborsRegressor"]
 AM_ESTIMATORS_CATBOOST = ["CatBoostRegressor"]

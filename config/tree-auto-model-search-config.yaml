@@ -1,0 +1,60 @@
+estimators:
+  - name: Linear-Regression
+    class_name: sklearn.linear_model.LinearRegression
+    linear: true
+    parameters:
+      estimator__fit_intercept: [True] # TODO for now need to have at least one candidate for parameter search
+  - name: LTR-LinearRegression
+    lineartree: LinearTreeRegressor
+    class_name: sklearn.linear_model.LinearRegression
+    linear: false
+    parameters:
+      estimator__criterion: ["mse", "rmse", "mae"]  # The function to measure the quality of a split
+      estimator__max_depth: [5, 10]  # The maximum depth of the tree considering only the splitting nodes
+      estimator__max_bins: [25, 100]  # The maximum number of bins to use to search the optimal split
+  - name: LFR-LinearRegression
+    lineartree: LinearForestRegressor
+    class_name: sklearn.linear_model.LinearRegression
+    linear: false
+    parameters:
+      estimator__n_estimators: [100, 50]  # he number of trees in the forest
+  - name: LBR-LinearRegression
+    lineartree: LinearBoostRegressor
+    class_name: sklearn.linear_model.LinearRegression
+    linear: false
+    parameters:
+      estimator__loss: ["linear", "exponential", "square"]  # The function used to calculate the residuals of each sample
+      estimator__max_depth: [3, None]  # The maximum depth of the tree. If None, then nodes are expanded until all leaves are pure
+  - name: Ridge-Regression
+    class_name: sklearn.linear_model.Ridge
+    linear: true
+    parameters:
+      estimator__alpha: [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
+  - name: LTR-RidgeRegression
+    lineartree: LinearTreeRegressor
+    class_name: sklearn.linear_model.Ridge
+    linear: false
+    parameters:
+      estimator__base_estimator__alpha: [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
+      estimator__criterion: [ "mse", "rmse", "mae" ]  # The function to measure the quality of a split
+      estimator__max_depth: [ 5, 10 ]  # The maximum depth of the tree considering only the splitting nodes
+      estimator__max_bins: [ 25, 100 ]  # The maximum number of bins to use to search the optimal split
+  - name: RandomForest-Regressor
+    class_name: sklearn.ensemble.RandomForestRegressor
+    linear: false
+    parameters:
+      estimator__n_estimators: [50, 100, 200]
+      estimator__max_depth: [None, 5, 10]
+      estimator__min_samples_split: [2, 10]
+      estimator__min_samples_leaf: [1, 4]
+  - name: XGBoost-Regressor
+    class_name: xgboost.XGBRegressor
+    linear: false
+    parameters:
+      estimator__max_depth: [3, 6]
+      estimator__eta: [0.01, 0.3]
+      estimator__subsample: [0.5, 1.0]
+      estimator__gamma: [0.0, 0.1, 0.2]
+
+
+
