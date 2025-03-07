@@ -85,7 +85,7 @@ python -m arise_predictions.main analyze-jobs --input-path examples/MLCommons
 It is also possible to specify the metadata input explicitly:
 
 ```bash
-python -m arise_predictions.main.py analyze-jobs --input-path examples/MLCommons --reread-history --input-file inference_data_tokens.csv --custom-job-name inference-thpt
+python -m arise_predictions.main analyze-jobs --input-path examples/MLCommons --reread-history --input-file inference_data_tokens.csv --custom-job-name inference-thpt
 ```
 
 In the above example, we also specify a custom job name. In this example data
@@ -173,8 +173,7 @@ provided, ARISE automatically uses the top-ranked model file according to the `a
 be located in the provided model path, next to the persisted model files.
 
 ```bash
-python -m arise_predictions.main predict --input-path examples/MLCommons --config-file
-config/example-demo-mlcommons-config.yaml --model-path examples/MLCommons/ARISE-auto-models
+python -m arise_predictions.main predict --input-path examples/MLCommons --config-file config/example-demo-mlcommons-config.yaml --model-path examples/MLCommons/ARISE-auto-models
 ```
 
 The input space defined by the configuration file and ARISE predictions for each input combination in this space are  
@@ -192,8 +191,7 @@ stored in a folder named `ARISE-predictions` which is created in the given input
     Other parameters are taken from the configuration file.
 
 ```bash
-python -m arise_predictions.main demo-predict --input-path examples/MLCommons --config-file
-config/example-demo-mlcommons-demo-predict-config.yaml --model-path examples/MLCommons/ARISE-auto-models
+python -m arise_predictions.main demo-predict --input-path examples/MLCommons --config-file config/example-demo-mlcommons-demo-predict-config.yaml --model-path examples/MLCommons/ARISE-auto-models
 ```
 
 In addition to the outputs described for the `predict` command, `demo-predict` will also create a file named 
